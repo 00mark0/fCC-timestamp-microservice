@@ -1,9 +1,13 @@
 const express = require("express");
+const cors = require("cors"); // Import CORS middleware
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to handle JSON responses
-app.use(express.json());
+// Enable CORS
+app.use(cors({ optionsSuccessStatus: 200 })); // Some legacy browsers choke on 204
+
+// Serve static files (if needed)
+app.use(express.static("public"));
 
 // Route for homepage
 app.get("/", (req, res) => {
@@ -13,15 +17,17 @@ app.get("/", (req, res) => {
 // Route for timestamp API
 app.get("/api/:date?", (req, res) => {
   let date;
+  const { date: dateParam } = req.params;
 
-  if (!req.params.date) {
+  // Handle empty date parameter
+  if (!dateParam) {
     date = new Date();
-  } else if (/^\d+$/.test(req.params.date)) {
+  } else if (/^\d+$/.test(dateParam)) {
     // Handle Unix timestamp
-    date = new Date(parseInt(req.params.date));
+    date = new Date(parseInt(dateParam, 10));
   } else {
     // Handle ISO 8601 or other date formats
-    date = new Date(req.params.date);
+    date = new Date(dateParam);
   }
 
   // Check for invalid date
@@ -29,13 +35,14 @@ app.get("/api/:date?", (req, res) => {
     return res.json({ error: "Invalid Date" });
   }
 
+  // Respond with JSON
   res.json({
     unix: date.getTime(),
     utc: date.toUTCString(),
   });
 });
 
-// Starting the server
+// Start the server
 app.listen(PORT, () => {
   console.log(`Your app is listening on port ${PORT}`);
 });
